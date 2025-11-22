@@ -10,18 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,7 +88,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier, viewModel: CameraViewModel) {
     val isCapturing by viewModel.isCapturing.collectAsState()
-    val capturedImage by viewModel.capturedImage.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -112,19 +106,6 @@ fun CameraScreen(modifier: Modifier = Modifier, viewModel: CameraViewModel) {
                 fontSize = 28.sp
             )
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        capturedImage?.let {
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "Latest Captured Image",
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
-        } ?: Text("No image captured yet.")
     }
 }
 
@@ -132,8 +113,6 @@ fun CameraScreen(modifier: Modifier = Modifier, viewModel: CameraViewModel) {
 @Composable
 fun CameraScreenPreview() {
     LauzHackTheme {
-        // In a real app, you might use a fake ViewModel for previews.
-        // For now, this just shows the basic layout.
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -142,8 +121,6 @@ fun CameraScreenPreview() {
             Button(onClick = {}, modifier = Modifier.size(width = 300.dp, height = 100.dp)) {
                 Text("START CAPTURE (5s)", fontSize = 28.sp)
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            Text("No image captured yet.")
         }
     }
 }

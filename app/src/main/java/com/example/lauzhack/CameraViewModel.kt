@@ -2,8 +2,6 @@ package com.example.lauzhack
 
 import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
@@ -27,7 +25,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.IOException
 
 private const val TAG = "CameraViewModel"
@@ -36,8 +33,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     private val _isCapturing = MutableStateFlow(false)
     val isCapturing = _isCapturing.asStateFlow()
 
-    private val _capturedImage = MutableStateFlow<Bitmap?>(null)
-    val capturedImage = _capturedImage.asStateFlow()
+    // The captured image state is no longer needed as it's not displayed.
 
     private var captureJob: Job? = null
     private var cameraManager: CameraManager? = null
@@ -78,11 +74,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     fun onImageCaptured(jpegData: ByteArray) {
         Log.i(TAG, "New image captured. Starting background workflow on IO dispatcher...")
         viewModelScope.launch(Dispatchers.IO) { // Switch to a background thread for the entire workflow
-            // Decode bitmap in the background
-            val bitmap = BitmapFactory.decodeByteArray(jpegData, 0, jpegData.size)
-            withContext(Dispatchers.Main) {
-                _capturedImage.value = bitmap // Update UI on the main thread
-            }
+            // Decoding the bitmap is no longer necessary as it's not shown in the UI.
 
             // Step 1: Analyze the image
             val description = analyzeImage(jpegData)
@@ -101,10 +93,14 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+
     private suspend fun analyzeImage(imageData: ByteArray): String? {
         val base64Image = Base64.encodeToString(imageData, Base64.NO_WRAP)
         val imageUrl = "data:image/jpeg;base64,$base64Image"
 
+        val visionPrompt1 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 meters. Precise what obstacle it is. Don't give unnnecessary warnings if the path ahead is clear enough. For example 'The path is clear for now.', or 'WARNING! Dog ahead at 2 meters'"
+        val visionPrompt2 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 meters. Precise what obstacle it is. Don"
+        val visionPrompt3 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle or human ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 seconds. Precise what obstacle it is. For example, 'WARNING! Dog ahead at 2 meters'. Don't give unnecessary warnings if the path ahead is clear enough. If the path is clear, just describe the surroundings especially if there is some path, stairs, elevator or any element the user may want to take to navigate."
         val request = VisionRequest(
             model = "google/gemma-3n-E4B-it",
             messages = listOf(
@@ -113,7 +109,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     content = listOf(
                         ContentPart(
                             type = "text",
-                            text = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 seconds. Precise what obstacle it is. Don't give unnnecessary warnings if the path ahead is clear enough. For example 'The path is clear for now.', or 'WARNING! Dog ahead at 2 meters'"
+                            text = visionPrompt3
                         ),
                         ContentPart(type = "image_url", imageUrl = ImageUrl(url = imageUrl))
                     )
@@ -195,7 +191,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     Log.e(TAG, "Failed to get status: ${statusResponse.errorBody()?.string()}")
                     break // Exit loop on error
                 }
-                delay(2000)
+                delay(200)
             }
 
             Log.e(TAG, "Polling for TTS result timed out after $pollTimeout ms.")
