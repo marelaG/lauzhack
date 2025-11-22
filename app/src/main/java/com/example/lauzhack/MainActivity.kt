@@ -1,8 +1,13 @@
 package com.example.lauzhack
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,13 +49,42 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ScreenWithButton(
                         modifier = Modifier.padding(innerPadding),
-                        onPlayAudio = {
-                            // Start the text-to-speech process with a sample text
-                            generateAndPlayAudio("I am now gonna start with a new message to check that the generation is legit.")
+                        onButtonClicked = {
+                            // Vibrate first, then start the audio process
+                            vibratePhone()
+                            generateAndPlayAudio("Watch out! There is a car coming from your right!")
                         }
                     )
                 }
             }
+        }
+    }
+
+    private fun vibratePhone() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        // First, check if the device has a vibrator
+        if (!vibrator.hasVibrator()) {
+            Log.w(TAG, "Device does not have a vibrator.")
+            return
+        } else {
+            Log.d(TAG, "Device has a vibrator.")
+        }
+
+        // Vibrate with the appropriate method based on the Android version
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "Triggering vibration with VibrationEffect.")
+            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            Log.d(TAG, "Triggering vibration with deprecated vibrate method.")
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(200)
         }
     }
 
@@ -106,7 +140,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun playAudioFromUrl(url: String) {
-        // This function remains the same
         mediaPlayer?.release()
         mediaPlayer = MediaPlayer().apply {
             Log.d(TAG, "Preparing to play audio from URL: $url")
@@ -149,8 +182,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ScreenWithButton(modifier: Modifier = Modifier, onPlayAudio: () -> Unit) {
-    // This composable remains largely the same
+fun ScreenWithButton(modifier: Modifier = Modifier, onButtonClicked: () -> Unit) {
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -159,7 +191,7 @@ fun ScreenWithButton(modifier: Modifier = Modifier, onPlayAudio: () -> Unit) {
         Button(
             onClick = {
                 Log.d(TAG, "Button clicked.")
-                onPlayAudio()
+                onButtonClicked()
             },
             modifier = Modifier
                 .fillMaxWidth(0.8f)
@@ -178,6 +210,6 @@ fun ScreenWithButton(modifier: Modifier = Modifier, onPlayAudio: () -> Unit) {
 @Composable
 fun ScreenWithButtonPreview() {
     LauzHackTheme {
-        ScreenWithButton(onPlayAudio = {})
+        ScreenWithButton(onButtonClicked = {})
     }
 }
