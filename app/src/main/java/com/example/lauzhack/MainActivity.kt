@@ -54,7 +54,7 @@ fun ScreenWithButton(modifier: Modifier = Modifier) {
         Button(
             onClick = {
                 // This is where the log message is written to the console (Logcat)
-                Log.d(TAG, "Big Button was clicked!")
+                Log.d(TAG, "Marcelina don't fucking click me again!")
             },
             // Make the button large
             modifier = Modifier
@@ -63,7 +63,7 @@ fun ScreenWithButton(modifier: Modifier = Modifier) {
                 .size(width = 300.dp, height = 100.dp) // Explicit size for "big" effect
         ) {
             Text(
-                text = "CLICK ME",
+                text = "CLICK ME NOW !",
                 fontSize = 28.sp // Larger text for a big button
             )
         }
