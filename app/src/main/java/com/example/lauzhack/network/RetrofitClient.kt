@@ -8,34 +8,28 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
     private const val BASE_URL = "https://api.deapi.ai/api/v1/client/"
 
-    // IMPORTANT: Replace with your actual API key
+    // IMPORTANT: Your API key is exposed here. For production, store it securely.
     private const val API_KEY = ""
 
-    private val httpClient by lazy {
-        // Create a logging interceptor to see request and response logs
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+    // Eagerly initialize the OkHttpClient
+    private val httpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $API_KEY")
+                .addHeader("accept", "application/json")
+                .build()
+            chain.proceed(request)
         }
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        })
+        .build()
 
-        OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                // Add authorization and content type headers to every request
-                val request = chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer $API_KEY")
-                    .addHeader("accept", "application/json")
-                    .build()
-                chain.proceed(request)
-            }
-            .addInterceptor(logging) // Add the logging interceptor
-            .build()
-    }
-
-    val instance: TextToSpeechService by lazy {
-        val retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(httpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        retrofit.create(TextToSpeechService::class.java)
-    }
+    // Eagerly initialize the Retrofit instance
+    val instance: TextToSpeechService = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(httpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        .create(TextToSpeechService::class.java)
 }
