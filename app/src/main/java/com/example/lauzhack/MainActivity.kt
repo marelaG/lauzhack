@@ -1,215 +1,149 @@
 package com.example.lauzhack
 
-import android.content.Context
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
-import com.example.lauzhack.network.RetrofitClient
-import com.example.lauzhack.network.TextToSpeechRequest
+import androidx.core.content.ContextCompat
 import com.example.lauzhack.ui.theme.LauzHackTheme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.io.IOException
 
-// Define a TAG for the Logcat messages
 private const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
-    private var mediaPlayer: MediaPlayer? = null
+    private val viewModel: CameraViewModel by viewModels()
+    private var cameraManager: CameraManager? = null
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.d(TAG, "Camera Permission GRANTED. Initializing CameraManager.")
+                initializeCameraManager()
+            } else {
+                Log.w(TAG, "Camera Permission DENIED.")
+                Toast.makeText(this, "Camera permission is required.", Toast.LENGTH_LONG).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        checkAndRequestCameraPermission()
+
         setContent {
             LauzHackTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ScreenWithButton(
+                    CameraScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onButtonClicked = {
-                            // Vibrate first, then start the audio process
-                            vibratePhone()
-                            generateAndPlayAudio("Watch out! There is a car coming from your right!")
-                        }
+                        viewModel = viewModel
                     )
                 }
             }
         }
     }
 
-    private fun vibratePhone() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        // First, check if the device has a vibrator
-        if (!vibrator.hasVibrator()) {
-            Log.w(TAG, "Device does not have a vibrator.")
-            return
-        } else {
-            Log.d(TAG, "Device has a vibrator.")
-        }
-
-        // Vibrate with the appropriate method based on the Android version
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(TAG, "Triggering vibration with VibrationEffect.")
-            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            Log.d(TAG, "Triggering vibration with deprecated vibrate method.")
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(200)
-        }
-    }
-
-    private fun generateAndPlayAudio(text: String) {
-        lifecycleScope.launch {
-            try {
-                // Step 1: Start the text-to-speech generation
-                Log.d(TAG, "Starting text-to-speech generation...")
-                val request = TextToSpeechRequest(text = text)
-                val initialResponse = RetrofitClient.instance.startTextToSpeech(request)
-
-                if (!initialResponse.isSuccessful || initialResponse.body() == null) {
-                    Log.e(TAG, "Failed to start generation: ${initialResponse.errorBody()?.string()}")
-                    return@launch
-                }
-
-                val requestId = initialResponse.body()!!.data.requestId
-                Log.d(TAG, "Generation started with request ID: $requestId")
-
-                // Step 2: Poll for the result
-                while (true) {
-                    Log.d(TAG, "Polling for status of request ID: $requestId...")
-                    val statusResponse = RetrofitClient.instance.getRequestStatus(requestId)
-
-                    if (!statusResponse.isSuccessful || statusResponse.body() == null) {
-                        Log.e(TAG, "Failed to get status: ${statusResponse.errorBody()?.string()}")
-                        break // Exit the loop on error
-                    }
-
-                    val statusData = statusResponse.body()!!.data
-                    Log.d(TAG, "Current status: ${statusData.status}")
-
-                    if (statusData.status == "done") {
-                        val resultUrl = statusData.resultUrl
-                        if (resultUrl != null) {
-                            Log.d(TAG, "Generation complete. Audio URL: $resultUrl")
-                            // Step 3: Play the audio
-                            playAudioFromUrl(resultUrl)
-                        } else {
-                            Log.e(TAG, "Generation is done, but result_url is null.")
-                        }
-                        break // Exit the loop on completion
-                    }
-
-                    // Wait for 2 seconds before polling again
-                    delay(2000)
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "An error occurred during the process: ${e.message}", e)
+    private fun checkAndRequestCameraPermission() {
+        when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
+            PackageManager.PERMISSION_GRANTED -> {
+                Log.d(TAG, "Permission already granted. Initializing CameraManager.")
+                initializeCameraManager()
+            }
+            else -> {
+                Log.d(TAG, "Permission not granted. Launching request.")
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
     }
 
-    private fun playAudioFromUrl(url: String) {
-        mediaPlayer?.release()
-        mediaPlayer = MediaPlayer().apply {
-            Log.d(TAG, "Preparing to play audio from URL: $url")
-            try {
-                val audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build()
-                setAudioAttributes(audioAttributes)
-                setDataSource(url)
-                setOnPreparedListener {
-                    Log.d(TAG, "MediaPlayer prepared, starting playback.")
-                    start()
-                }
-                setOnCompletionListener {
-                    Log.d(TAG, "MediaPlayer playback completed.")
-                    it.release()
-                    mediaPlayer = null
-                }
-                setOnErrorListener { mp, what, extra ->
-                    Log.e(TAG, "MediaPlayer error - what: $what, extra: $extra")
-                    mp.release()
-                    mediaPlayer = null
-                    true
-                }
-                prepareAsync()
-            } catch (e: IOException) {
-                Log.e(TAG, "MediaPlayer IOException: ${e.message}", e)
-                release()
-                mediaPlayer = null
+    private fun initializeCameraManager() {
+        if (cameraManager == null) {
+            cameraManager = CameraManager(
+                context = this,
+                lifecycleOwner = this,
+                onImageCaptured = viewModel::onImageCaptured
+            ).also {
+                viewModel.initializeCameraManager(it)
+                Log.d(TAG, "CameraManager initialized and passed to ViewModel.")
             }
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        mediaPlayer?.release()
-        mediaPlayer = null
     }
 }
 
 @Composable
-fun ScreenWithButton(modifier: Modifier = Modifier, onButtonClicked: () -> Unit) {
+fun CameraScreen(modifier: Modifier = Modifier, viewModel: CameraViewModel) {
+    val isCapturing by viewModel.isCapturing.collectAsState()
+    val capturedImage by viewModel.capturedImage.collectAsState()
+
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(
-            onClick = {
-                Log.d(TAG, "Button clicked.")
-                onButtonClicked()
-            },
+            onClick = { viewModel.toggleCapture() },
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .padding(24.dp)
                 .size(width = 300.dp, height = 100.dp)
         ) {
             Text(
-                text = "CLICK ME NOW !",
+                text = if (isCapturing) "STOP CAPTURE" else "START CAPTURE (5s)",
                 fontSize = 28.sp
             )
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        capturedImage?.let {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = "Latest Captured Image",
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
+        } ?: Text("No image captured yet.")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ScreenWithButtonPreview() {
+fun CameraScreenPreview() {
     LauzHackTheme {
-        ScreenWithButton(onButtonClicked = {})
+        // In a real app, you might use a fake ViewModel for previews.
+        // For now, this just shows the basic layout.
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(onClick = {}, modifier = Modifier.size(width = 300.dp, height = 100.dp)) {
+                Text("START CAPTURE (5s)", fontSize = 28.sp)
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("No image captured yet.")
+        }
     }
 }
