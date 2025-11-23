@@ -203,7 +203,7 @@ fun CameraScreen(modifier: Modifier = Modifier, viewModel: CameraViewModel, isLi
         verticalArrangement = Arrangement.SpaceAround
     ) {
         Text(
-            text = "AURA",
+            text = "Pilot",
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White.copy(alpha = 0.8f)
@@ -288,7 +288,7 @@ fun PulsatingCaptureButton(isCapturing: Boolean, isListening: Boolean, onTap: ()
 fun CameraScreenPreview_Inactive() {
     LauzHackTheme {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceAround) {
-            Text("AURA", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
+            Text("Pilot", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
             PulsatingCaptureButton(isCapturing = false, isListening = false, onTap = {}, onLongPress = {})
             Spacer(modifier = Modifier.height(1.dp))
         }
@@ -300,7 +300,7 @@ fun CameraScreenPreview_Inactive() {
 fun CameraScreenPreview_Active() {
     LauzHackTheme {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceAround) {
-            Text("AURA", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
+            Text("Pilot", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
             PulsatingCaptureButton(isCapturing = true, isListening = false, onTap = {}, onLongPress = {})
             Spacer(modifier = Modifier.height(1.dp))
         }
@@ -312,7 +312,7 @@ fun CameraScreenPreview_Active() {
 fun CameraScreenPreview_Listening() {
     LauzHackTheme {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceAround) {
-            Text("AURA", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
+            Text("Pilot", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
             PulsatingCaptureButton(isCapturing = false, isListening = true, onTap = {}, onLongPress = {})
             Spacer(modifier = Modifier.height(1.dp))
         }
