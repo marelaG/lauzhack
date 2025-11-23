@@ -1,19 +1,17 @@
-# Pilot - Your AI Assistant
+# PawPilot - Your AI Assistant
 
-Welcome to Pilot, an intelligent Android application developed for LauzHack. Pilot is designed to be your personal AI companion, using computer vision and speech recognition to understand your environment and respond to your voice commands.
+Welcome to PawPilot, an intelligent Android application developed for LauzHack. Pilot is designed to be your personal AI companion, using computer vision and text to speech to understand your environment and help you navigate it.
 
 ## Key Features
 
 - **Visual Analysis:** Pilot can periodically capture images from your device's camera to analyze and understand your surroundings.
-- **Voice Commands:** Simply long-press the central button to issue voice commands. Pilot listens, records, and transcribes your speech to text.
-- **Intuitive & Responsive UI:** The app features a clean, minimalistic interface with a central pulsating button that visually communicates its current state: inactive (gray), capturing images (blue), or listening to your voice (green).
+- **Intuitive & Responsive UI:** The app features a clean, minimalistic interface with a central pulsating button that visually communicates its current state: inactive (gray), capturing images (blue).
 - **Haptic Feedback:** Enjoy subtle vibrations that provide tactile confirmation of your actions, making the experience more intuitive.
 
 ## How to Use
 
 1.  **Start/Stop Visual Analysis:** Tap the central button to begin or end the visual analysis. When active, the button will turn blue and pulsate.
-2.  **Record a Voice Command:** Press and hold the central button. It will turn green, indicating that it's listening. When you're finished speaking, release the button.
-3.  **View Transcription:** The recorded audio will be automatically transcribed, and the resulting text will be printed to the application logs (viewable in Android Studio's Logcat).
+3.  **View Transcription:** The recorded audio will be automatically transcribed, and the resulting text will be read to the user outloud.
 
 ## Setup for Developers
 
