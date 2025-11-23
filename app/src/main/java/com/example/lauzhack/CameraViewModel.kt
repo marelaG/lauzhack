@@ -77,7 +77,11 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
             // Decoding the bitmap is no longer necessary as it's not shown in the UI.
 
             // Step 1: Analyze the image
+            // compute elapsed time and log it
+            val startTime = System.currentTimeMillis()
             val description = analyzeImage(jpegData)
+            val elapsedTime = System.currentTimeMillis() - startTime
+            Log.i(TAG, "Image analysis completed in $elapsedTime ms.")
 
             if (description != null) {
                 Log.i(TAG, "Vision API analysis complete: '$description'")
@@ -101,6 +105,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         val visionPrompt1 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 meters. Precise what obstacle it is. Don't give unnnecessary warnings if the path ahead is clear enough. For example 'The path is clear for now.', or 'WARNING! Dog ahead at 2 meters'"
         val visionPrompt2 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 meters. Precise what obstacle it is. Don"
         val visionPrompt3 = "You are a helpful crucial assistant helping a visualy impaired person. Please tell this person if there is an obstacle or human ahead. Give your instructions as shortly as possible. Start with WARNING if there is an obstacle reachable within 3 seconds. Precise what obstacle it is. For example, 'WARNING! Dog ahead at 2 meters'. Don't give unnecessary warnings if the path ahead is clear enough. If the path is clear, just describe the surroundings especially if there is some path, stairs, elevator or any element the user may want to take to navigate."
+        val visionPrompt4 = "You are a helpful crucial assistant guiding a visually impaired person by seeing in front of them. Please tell this person if there is an obstacle (object, animal, person, …) ahead. Give your instructions super shortly in less than 10 words in total, focusing on the important elements. Start with WARNING if there is an obstacle reachable within 3 seconds. Precise what obstacle it is. For example, 'WARNING! Dog ahead at 2 meters'. Don't give unnecessary warnings if the path ahead is clear enough. If the path is clear, just describe the surroundings especially if there is some path, stairs, elevator or any element the user may want to take to navigate."
         val request = VisionRequest(
             model = "google/gemma-3n-E4B-it",
             messages = listOf(
@@ -109,7 +114,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     content = listOf(
                         ContentPart(
                             type = "text",
-                            text = visionPrompt3
+                            text = visionPrompt4
                         ),
                         ContentPart(type = "image_url", imageUrl = ImageUrl(url = imageUrl))
                     )
@@ -183,6 +188,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     if (statusData.status == "done") {
                         statusData.resultUrl?.let {
                             Log.d(TAG, "Generation complete. Audio URL: $it")
+                            Log.d(TAG, "Elapsed time for audio generation: " + (System.currentTimeMillis() - pollStartTime) + " ms")
                             playAudioFromUrl(it)
                         } ?: Log.e(TAG, "Generation is done, but result_url is null.")
                         return // Exit the function on success
