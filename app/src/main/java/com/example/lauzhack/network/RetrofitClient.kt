@@ -9,7 +9,7 @@ object RetrofitClient {
     private const val BASE_URL = "https://api.deapi.ai/api/v1/client/"
 
     // IMPORTANT: Your API key is exposed here. For production, store it securely.
-    private const val API_KEY = ""
+    private const val API_KEY = "YOUR_API_KEY_HERE"
 
     // Eagerly initialize the OkHttpClient
     private val httpClient = OkHttpClient.Builder()

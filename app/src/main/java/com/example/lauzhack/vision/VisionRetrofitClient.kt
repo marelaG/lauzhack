@@ -10,7 +10,7 @@ object VisionRetrofitClient {
     private const val BASE_URL = "https://api.together.xyz/v1/"
 
     // IMPORTANT: Replace with your actual Together API key
-    private const val API_KEY = ""
+    private const val API_KEY = "YOUR_API_KEY_HERE"
 
     private val httpClient by lazy {
         val logging = HttpLoggingInterceptor().apply {
